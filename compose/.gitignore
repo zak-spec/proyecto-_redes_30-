@@ -1,0 +1,18 @@
+# Variables de entorno sensibles
+.env
+.env.local
+.env.*.local
+
+# Datos de volúmenes locales
+mysql_data/
+wordpress_data/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# Backups
+*.sql
+*.sql.gz
+backup/
