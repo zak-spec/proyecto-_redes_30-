@@ -55,9 +55,7 @@ services:
       start_period: 40s
 
   certbot:
-    build:
-      context: ./certbot
-    image: certbot-custom
+    image: certbot/certbot
     container_name: certbot
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME}
@@ -72,13 +70,12 @@ services:
         trap exit TERM;
         if [ -z \"$$DOMAIN_NAME\" ]; then echo 'Certbot requiere DOMAIN_NAME'; exit 1; fi;
         if [ -z \"$$CERTBOT_EMAIL\" ]; then echo 'Certbot requiere CERTBOT_EMAIL'; exit 1; fi;
-        until curl --silent --head --fail http://nginx/; do
-          echo 'Esperando a que Nginx esté disponible para el challenge HTTP';
-          sleep 5;
-        done;
+        echo 'Esperando 30 segundos para que Nginx esté completamente disponible...';
+        sleep 30;
         while :; do
           if [ ! -f /etc/letsencrypt/live/$$DOMAIN_NAME/fullchain.pem ]; then
-            certbot certonly --non-interactive --agree-tos --email $$CERTBOT_EMAIL --webroot -w /var/www/certbot -d $$DOMAIN_NAME;
+            echo 'Intentando emitir certificado para '$$DOMAIN_NAME;
+            certbot certonly --non-interactive --agree-tos --email $$CERTBOT_EMAIL --webroot -w /var/www/certbot -d $$DOMAIN_NAME || echo 'Error al emitir certificado. Reintentando en 12h...';
           fi;
           certbot renew --webroot -w /var/www/certbot --quiet;
           sleep 12h;
