@@ -26,9 +26,6 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
 
-  # ================================================================
-  # SERVICIO: WordPress (PHP-FPM)
-  # ================================================================
   wordpress:
     image: wordpress:6.4-php8.1-fpm
     container_name: wordpress_app
