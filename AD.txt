@@ -1,0 +1,1 @@
+Add-ADGroupMember -Identity 'Grupo1' -Members 'Bart' -MemberTimeToLive (New-TimeSpan -Minutes 1)

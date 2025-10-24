@@ -1,0 +1,101 @@
+# =================================================================
+# .gitignore - Raíz del Proyecto
+# =================================================================
+# Ignora archivos sensibles y temporales en TODO el repositorio
+# =================================================================
+
+# =================================================================
+# Variables de entorno sensibles
+# =================================================================
+.env
+.env.local
+.env.*.local
+compose/.env
+compose/.env.local
+
+# =================================================================
+# Datos de volúmenes Docker
+# =================================================================
+compose/nginx/certs/*
+!compose/nginx/certs/.gitkeep
+compose/nginx/letsencrypt/*
+!compose/nginx/letsencrypt/.gitkeep
+compose/nginx/www/*
+!compose/nginx/www/.gitkeep
+
+# Volúmenes de datos (si se crean localmente)
+mysql_data/
+wordpress_data/
+db_data/
+wp_data/
+
+# =================================================================
+# Archivos de sistema
+# =================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.log
+*.swp
+*.swo
+*~
+
+# =================================================================
+# Backups y dumps
+# =================================================================
+*.sql
+*.sql.gz
+*.dump
+backup/
+backups/
+
+# =================================================================
+# Archivos de IDEs y editores
+# =================================================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =================================================================
+# Archivos temporales de Docker
+# =================================================================
+*.pid
+*.sock
+
+# =================================================================
+# Archivos de configuración local (temporal)
+# =================================================================
+*.local
+*.tmp
+*.temp
+
+# =================================================================
+# Documentación temporal/local (no subir a Git)
+# =================================================================
+SECURITY_CHECKLIST.md
+CORRECTIONS_SUMMARY.md
+GITIGNORE_SUMMARY.md
+compose/SECURITY_CHECKLIST.md
+compose/CORRECTIONS_SUMMARY.md
+compose/LOCAL_DOCS_README.md
+
+# =================================================================
+# Certificados de prueba
+# =================================================================
+*.pem
+*.key
+*.crt
+*.csr
+!compose/nginx/certs/.gitkeep
+
+# =================================================================
+# Archivos de Office temporales
+# =================================================================
+~$*.doc*
+~$*.xls*
+~$*.ppt*

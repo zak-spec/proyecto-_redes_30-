@@ -1,9 +1,25 @@
-# Variables de entorno sensibles
+# =================================================================
+# .gitignore específico para compose/
+# =================================================================
+# Este archivo complementa al .gitignore de la raíz
+# Solo incluye patrones específicos de esta carpeta
+# =================================================================
+
+# Variables de entorno sensibles (solo en esta carpeta)
 .env
 .env.local
 .env.*.local
+.env.example
 
-# Datos de volúmenes locales
+# Certificados SSL generados dinámicamente
+nginx/certs/*
+!nginx/certs/.gitkeep
+nginx/letsencrypt/*
+!nginx/letsencrypt/.gitkeep
+nginx/www/*
+!nginx/www/.gitkeep
+
+# Datos de volúmenes Docker (si se crean aquí)
 mysql_data/
 wordpress_data/
 
@@ -12,7 +28,15 @@ wordpress_data/
 Thumbs.db
 *.log
 
-# Backups
+# Backups de bases de datos
 *.sql
 *.sql.gz
 backup/
+
+# Archivos temporales de Docker
+docker-compose.override.yml
+
+# Documentación temporal/local (no subir)
+SECURITY_CHECKLIST.md
+CORRECTIONS_SUMMARY.md
+LOCAL_DOCS_README.md

@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  # =================================================================
+  # ================================================================
   # SERVICIO: MySQL Database
-  # =================================================================
+  # ================================================================
   db:
     image: mysql:8.0
     container_name: mysql_db
@@ -23,23 +23,23 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    command: 
+    command:
       - --default-authentication-plugin=mysql_native_password
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-  
-  # =================================================================
+
+  # ================================================================
   # SERVICIO: WordPress (PHP-FPM)
-  # =================================================================
+  # ================================================================
   wordpress:
     image: wordpress:6.4-php8.1-fpm
     container_name: wordpress_app
     restart: unless-stopped
     environment:
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
       WORDPRESS_TABLE_PREFIX: wp_
       WORDPRESS_DEBUG: 'false'
     volumes:
@@ -53,50 +53,95 @@ services:
     networks:
       - pf_networks
     healthcheck:
-      test: ["CMD-SHELL", "php-fpm-healthcheck || exit 1"]
+      test: ["CMD-SHELL", "curl --silent --head --fail http://nginx/wp-login.php >/dev/null 2>&1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # =================================================================
-  # SERVICIO: Nginx Web Server
-  # =================================================================
+  # ================================================================
+  # SERVICIO: Certbot (Let's Encrypt)
+  # ================================================================
+  certbot:
+    build:
+      context: ./certbot
+    image: certbot-custom
+    container_name: certbot
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL}
+    volumes:
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/letsencrypt:/var/lib/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    entrypoint: >
+      sh -c "
+        set -e;
+        trap exit TERM;
+        if [ -z \"$$DOMAIN_NAME\" ]; then echo 'Certbot requiere DOMAIN_NAME'; exit 1; fi;
+        if [ -z \"$$CERTBOT_EMAIL\" ]; then echo 'Certbot requiere CERTBOT_EMAIL'; exit 1; fi;
+        until curl --silent --head --fail http://nginx/; do
+          echo 'Esperando a que Nginx esté disponible para el challenge HTTP';
+          sleep 5;
+        done;
+        while :; do
+          if [ ! -f /etc/letsencrypt/live/$$DOMAIN_NAME/fullchain.pem ]; then
+            certbot certonly --non-interactive --agree-tos --email $$CERTBOT_EMAIL --webroot -w /var/www/certbot -d $$DOMAIN_NAME;
+          fi;
+          certbot renew --webroot -w /var/www/certbot --quiet;
+          sleep 12h;
+        done
+      "
+    networks:
+      - pf_networks
+    depends_on:
+      - nginx
+
+  # ================================================================
+  # SERVICIO: Nginx Web Server (con HTTPS)
+  # ================================================================
   nginx:
     image: nginx:stable-alpine
     container_name: nginx_proxy
     restart: unless-stopped
     ports:
-      - "${NGINX_PORT:-80}:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - wp_data:/var/www/html:ro
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/entrypoint.sh:/etc/nginx/entrypoint.sh:ro
+      - ./nginx/certs:/etc/letsencrypt:ro
+      - ./nginx/letsencrypt:/var/lib/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME}
+    entrypoint: ["sh", "/etc/nginx/entrypoint.sh"]
     depends_on:
       wordpress:
         condition: service_started
     networks:
       - pf_networks
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "curl", "--silent", "--fail", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
 
-# =================================================================
+# ================================================================
 # VOLÚMENES PERSISTENTES
-# =================================================================
+# ================================================================
 volumes:
   db_data:
     name: ${COMPOSE_PROJECT_NAME:-wordpress}_db_data
   wp_data:
     name: ${COMPOSE_PROJECT_NAME:-wordpress}_wp_data
 
-# =================================================================
+# ================================================================
 # REDES
-# =================================================================
+# ================================================================
 networks:
   pf_networks:
     name: ${COMPOSE_PROJECT_NAME:-wordpress}_network
     driver: bridge
-
