@@ -57,6 +57,7 @@ services:
   certbot:
     image: certbot/certbot
     container_name: certbot
+    restart: unless-stopped
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME}
       CERTBOT_EMAIL: ${CERTBOT_EMAIL}
@@ -70,8 +71,7 @@ services:
         trap exit TERM;
         if [ -z \"$$DOMAIN_NAME\" ]; then echo 'Certbot requiere DOMAIN_NAME'; exit 1; fi;
         if [ -z \"$$CERTBOT_EMAIL\" ]; then echo 'Certbot requiere CERTBOT_EMAIL'; exit 1; fi;
-        echo 'Esperando 30 segundos para que Nginx esté completamente disponible...';
-        sleep 30;
+        echo 'Nginx está listo. Iniciando proceso de certificados...';
         while :; do
           if [ ! -f /etc/letsencrypt/live/$$DOMAIN_NAME/fullchain.pem ]; then
             echo 'Intentando emitir certificado para '$$DOMAIN_NAME;
@@ -84,7 +84,8 @@ services:
     networks:
       - pf_networks
     depends_on:
-      - nginx
+      nginx:
+        condition: service_healthy
 
   nginx:
     image: nginx:stable-alpine

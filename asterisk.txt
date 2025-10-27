@@ -1,0 +1,165 @@
+apt-get update
+apt-get install asterisk
+clear
+asterisk -v
+apt-get install asterisk-prompt-es asterisk-core-sounds-es asterisk-core-sounds-es-gsm asterisk-core-sounds-es-wav asterisk-core-sounds-es-g722
+dpkg -l asterisk*
+service asterisk status
+ls -l /etc/r*
+cd radiusclient
+ls -l
+cp /etc/asterisk/cel.conf /etc/asterisk/cel.conf.copia
+cp /etc/asterisk/cdr.conf /etc/asterisk/cdr.conf.copia
+nano /etc/asterisk/cel.conf
+nano /etc/asterisk/cdr.conf
+service asterisk restart
+sudo mkdir -p /etc/radiusclient-ng
+sudo ln -sf /etc/radcli/radiusclient.conf /etc/radiusclient-ng/radiusclient.conf
+# verifica
+ls -l /etc/radiusclient-ng/radiusclient.conf
+readlink -f /etc/radiusclient-ng/radiusclient.conf
+service asterisk restart
+ls -l /etc/asterisk
+nano /etc/asterisk/sip.conf
+cp /etc/asterisk/sip.conf /etc/asterisk/sip.conf.copia
+vi /etc/asterisk/sip.conf
+%g/^\s*;/d
+%g/^$/d
+:wq
+[usuario](!)                   ;Plantilla con la configuración que vamos a utilizar
+type=friend                   ; El usuario con esta extensión podrá enviar y recibir llamadas
+host=dynamic                  ; Cualquier equipo con cualquier IP se podrá registrar como cliente.
+context=redesplus             ; Contexto predefinido (ver -> extensions.conf)
+
+; Extensión 101
+[ext101](usuario)             ;[definimos el nombre de la extensión] [añadimos una plantilla]
+username=delfin               ;permite añadir un nombre de usuario a la extension
+secret=s1234                  ;contraseña de la extensión (necesario para conectar desde terminal$)
+port=5061
+
+; Extensión 102
+[ext102](usuario)
+username=tortuga
+secret=s1234
+;port=5061                     ; Si se descomenta esta línea cuando se conecte el softphone
+                              ; con Asterisk lo hará por este puerto en vez de por el 5060
+                              ; Necesario si queremos un softphone en la misma máquina
+                              ; que Asterisk.
+
+; Extensión 102
+[ext102](usuario)
+username=tortuga
+secret=s1234
+port=5061  
+; Extensión 103 (León)
+[ext103](usuario)
+username=leon
+secret=s1234
+;port=5061    ; Comentado para que la extensión use el puerto SIP global (normalmente 5060)
+
+; Extensión 104 (Tigre)
+[ext104](usuario)
+username=tigre
+secret=s1234
+;port=5061
+
+; Extensión 105 (Mono)
+[ext105](usuario)
+username=mono
+secret=s1234
+;port=5061
+
+; Extensión 106 (Oso)
+[ext106](usuario)
+username=oso
+secret=s1234
+;port=5061
+
+; Extensión 107 (Zorro)
+[ext107](usuario)
+username=zorro
+secret=s1234
+;port=5061
+
+; Extensión 108 (Cebra)
+[ext108](usuario)
+username=cebra
+secret=s1234
+;port=5061
+
+; Extensión 109 (Panda)
+[ext109](usuario)
+username=panda
+secret=s1234
+;port=5061
+
+; Extensión 110 (Lobo)
+[ext110](usuario)
+username=lobo
+secret=s1234
+;port=5061
+
+; El tipo (type) "user" se usa para autenticar llamadas entrantes,
+; "peer" para llamadas salientes y "friend" para ambas.
+service asterisk reload
+asterisk -r -v -v -v (o con muchas v)
+sip show users
+sip show peers
+mv /etc/asterisk/extensions.conf /etc/asterisk/extensions.conf.copia
+nano /etc/asterisk/extensions.conf
+[redes2]
+exten => 101,1,Dial(SIP/ext101)
+exten => 102,1,Dial(SIP/ext102)
+exten => 103,1,Dial(SIP/ext103)
+exten => 104,1,Dial(SIP/ext104)
+exten => 105,1,Dial(SIP/ext105)
+exten => 106,1,Dial(SIP/ext106)
+exten => 107,1,Dial(SIP/ext107)
+exten => 108,1,Dial(SIP/ext108)
+exten => 109,1,Dial(SIP/ext109)
+exten => 110,1,Dial(SIP/ext110)
+; exten => nº de extensión,prioridad,aplicación a ejecutar()
+; Nº DE EXTENSIÓN es el nº que hay que marcar dentro de dicho
+; contexto para llamar al destino objetivo
+; PRIORIDAD indica el orden en el que se van a ejecutar las
+; sucesivas instrucciones asociadas a un mismo
+; APLICACIÓN A EJECUTAR es la orden que se va a ejecutar en la
+; línea dada
+
+; Dial es la aplicación para conectar con otro dispositivo. Dial(Tecnologia/dispositivo)
+; Conecta dos canales juntos.
+; Es quizás la aplicación más importante de Asterisk.
+
+dialplan reload
+sip reload
+core show channels o sip show channels
+
+[general]
+context=public
+allowoverlap=no
+udpbindaddr=0.0.0.0
+tcpenable=no
+transport=udp
+srvlookup=yes
+
+; NAT / redes (ajusta)
+nat=force_rport,comedia
+externip=<ELASTIC_PUBLIC_IP>        ; ej: 3.123.45.67  (si usas Elastic IP)
+localnet=<VPC_CIDR_BLOCK>           ; ej: 172.31.0.0/16 o 10.0.0.0/16
+externrefresh=120
+
+; codecs mínimos
+disallow=all
+allow=ulaw
+
+; seguridad básica
+allowguest=no
+alwaysauthreject=yes
+qualify=yes
+directmedia=no
+
+Reglas mínimas en AWS Security Group
+
+UDP 5060 — SIP (si usas chan_sip)
+
+UDP 10000-20000 — RTP
