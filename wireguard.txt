@@ -56,7 +56,7 @@ Aplica cambios:
 
 sudo sysctl -p
 
-📱 4️⃣ Genera el archivo del cliente (para tu teléfono)
+Genera el archivo del cliente 
 
 Crea:
 
@@ -93,6 +93,10 @@ para el apagado y reinicio
 
 ip route (buscar dev en la línea default)
 
+sudo wg show
+ip route show
+
+
 cat /etc/wireguard/wg0.conf (buscar Address)
 
 cat /proc/sys/net/ipv4/ip_forward
@@ -108,12 +112,9 @@ Address = 10.10.0.1/24
 ListenPort = 51820
 PrivateKey = mDr6TpGOdcCLyXTXpI+PAlC+e+/UPMM/N7e+7msP2G8=
 MTU = 1380
-# ------------------------------------------------------------------------------------------------------------------------------------------------
-# NUEVAS REGLAS CORREGIDAS
-# ------------------------------------------------------------------------------------------------------------------------------------------------
+
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -A POSTROUTING -s 10.10.0.0/24 -o enp39s0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -D POSTROUTING -s 10.10.0.0/24 -o enp39s0 -j MASQUERADE
-# ------------------------------------------------------------------------------------------------------------------------------------------------
 
 [Peer]
 PublicKey = +kkIcGSi+oPbUYLr4MQ/btgfjHU+H/Sy5EW0CQR/HyI=
@@ -123,3 +124,17 @@ sudo wg-quick down wg0
 sudo wg-quick up wg0
 
 sudo systemctl enable wg-quick@wg0
+
+[Interface]
+Address = 10.10.0.1/24
+ListenPort = 51820
+PrivateKey = mDr6TpGOdcCLyXTXpI+PAlC+e+/UPMM/N7e+7msP2G8=
+MTU = 1380
+
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -A POSTROUTING -s 10.10.0.0/24 -o enp39s0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -D POSTROUTING -s 10.10.0.0/24 -o enp39s0 -j MASQUERADE
+
+
+[Peer]
+PublicKey = +kkIcGSi+oPbUYLr4MQ/btgfjHU+H/Sy5EW0CQR/HyI=
+AllowedIPs = 10.10.0.2/32

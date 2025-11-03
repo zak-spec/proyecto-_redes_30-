@@ -1,0 +1,91 @@
+# 1. Actualizar el sistema
+sudo apt update && sudo apt upgrade -y
+
+# 2. Instalar Docker (método automático)
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# 3. Agregar usuario al grupo docker (para no usar sudo)
+sudo usermod -aG docker $USER
+
+# 4. Instalar Docker Compose V2
+sudo curl -SL https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 5. Verificar instalación
+docker --version          # Docker Engine
+docker-compose --version  # Docker Compose V2
+
+
+sudo systemctl edit docker.service
+
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd
+
+# Recarga la configuración de systemd
+sudo systemctl daemon-reload
+
+# Inicia Docker con la nueva configuración
+sudo systemctl restart docker
+
+# Verifica el estado
+sudo systemctl status Docker
+
+
+server {
+    listen 80;
+    server_name ${DOMAIN_NAME};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_CERT_FILE};
+    ssl_certificate_key ${SSL_CERT_KEY_FILE};
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    root /var/www/html;
+    index index.php index.html;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+
+    location = /xmlrpc.php {
+        # Deniega el acceso a TODAS las IPs, incluyendo la interna 172.18.0.2
+        deny all;
+        # Cierra la conexión inmediatamente (código 444) para ahorrar recursos.
+        return 444; 
+    }
+
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        # Asegúrate de que los archivos PHP sean procesados por el contenedor de WordPress (fpm)
+        include fastcgi_params;
+        fastcgi_pass wordpress_app:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+
+
+

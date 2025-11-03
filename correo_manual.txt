@@ -1,0 +1,112 @@
+
+**POSTFIX + DOVECOT + WEBMAIL**
+
+**COMPROBAR HOSTNAME**
+hostname
+sudo hostnamectl set-hostname clockworkcomputer.local
+sudo hostnamectl set-hostname --static clockworkcomputer.local
+
+**INSTALAR POSTFIX**
+apt-get install postfix
+
+**COMPROBAR DOMINIO**
+cat /etc/mailname
+En caso de realizar modificación: systemctl restart postfix
+
+**AÑADIR USUARIOS**
+adduser bob
+adduser alice
+
+**INSTALAR MAILX**
+apt-get install bsd-mailx
+
+**COMPROBAR LOG MAILS**
+cat /var/log/mail.log
+
+**INSTALAR DOVECOT-POP3D**
+apt-get install dovecot-pop3d
+
+**CONFIGURAR SERVIDOR POP - RED LOCAL**
+nano /etc/postfix/main.cf
+mynetworks = 127.0.0.0/8 \[::ffff:127.0.0.0]/104 \[::1]/128 192.168.1.0/2
+home_mailbox = Maildir/
+mailbox_comamand =
+
+systemctl restart postfix
+
+nano /etc/dovecot/conf.d/10-auth.conf
+CAMBIAR: disable_plaintext_auth = no
+
+nano /etc/dovecot/conf.d/10-mail.conf
+Añadir # mail_location = mbox:~/mail:INBOX=/var/mail/%u
+Quitar # mail_location = maildir:~/Maildir
+
+REINICIAMOS DOVECOT
+sudo systemctl restart dovecot
+sudo systemctl status dovecot
+
+CONFIGURAR DNS
+nano /var/cache/bind/db.clockworkcomputer.local
+clockworkcomputer.local IN MX 10 correo.clockworkcomputer.local.
+pop3 IN CNAME server
+smtp IN CNAME server
+systemctl restart bind9
+
+COMPROBACIONES EQUIPO CLIENTE
+host pop3
+host smtp
+dig -t MX clockworkcomputer.local
+
+BORRAR CACHE DNS UBUNTU 22.04
+sudo resolvectl flush-caches
+
+INSTALACIÓN IMAP - WEBMAIL
+REQUISITO: MYSQL
+apt-get install mysql-server
+
+INSTALACIÓN SERVICIO IMAP
+apt-get install dovecot-imapd
+
+
+**INSTALACIÓN WEBMAIL ROUNDCUBE**
+apt-get install roundcube
+
+**COPIAR APACHE/SITE/DEFAULT-ROUND**
+cd /etc/apache2/sites-available/
+cp 000-default.conf round.conf
+nano round.conf
+systemctl restart apache2
+
+**CREAR ENLACE SIMBÓLICO**
+cd /etc/apache2/sites-enabled
+a2ensite round.conf
+
+**AÑADIR CORREO A DNS**
+nano /var/cache/bind/db.clockworkcomputer.local
+correo IN CNAME server
+systemctl restart bind9
+
+**CONFIGURAR ROUNDCUBE**
+nano /etc/roundcube/config.inc.php
+systemctl restart apache2
+
+**SOLUCIÓN FORBIDDEN**
+cd ..
+cd sites-available/
+nano round.conf
+<Directory /var/lib/roundcube>
+Require all granted
+</Directory>
+
+
+
+sudo nano /etc/apache2/sites-available/round.conf
+sudo nano /etc/apache2/ports.conf
+# PRUEBA CRÍTICA: Debe decir Syntax OK
+sudo apache2ctl configtest
+sudo systemctl restart apache2
+sudo systemctl status apache2  # Confirma que dice 'active (running)'
+
+
+sudo journalctl -u dovecot.service --since "1 hour ago"
+

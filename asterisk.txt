@@ -163,3 +163,38 @@ Reglas mínimas en AWS Security Group
 UDP 5060 — SIP (si usas chan_sip)
 
 UDP 10000-20000 — RTP
+
+
+sudo systemctl status Asterisk
+
+
+sudo asterisk -rvvv
+
+ls -l /var/log/asterisk/
+
+
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+
+sudo nano /etc/fail2ban/jail.local
+
+
+[asterisk]
+enabled  = true
+filter   = asterisk
+port     = 5060,5061
+logpath  = /var/log/asterisk/messages.log  <-- ¡Ruta corregida crucial!
+maxretry = 5
+bantime  = 3600
+
+
+sudo systemctl restart fail2ban
+
+
+sudo fail2ban-client status Asterisk
+
+
+sudo systemctl start Asterisk
+
+sudo systemctl enable Asterisk
+
+sudo systemctl enable fail2ban
